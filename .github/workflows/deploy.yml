@@ -1,0 +1,39 @@
+name: Deploy Node App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+
+            cd /home/ubuntu/node-app/Node.js-App-Deploy-Github-Action
+
+            echo "Pulling latest code..."
+            git pull origin main
+
+            echo "Stopping existing containers..."
+            docker compose down
+
+            echo "Removing unused images..."
+            docker image prune -f
+
+            echo "Building and starting containers..."
+            docker compose up -d --build
+
+            echo "Deployment completed successfully"
